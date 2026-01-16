@@ -1,0 +1,44 @@
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<div class="app-container">
+  <header>
+    <h1 id="saludo-dinamico">Hola, IGNACIO o CLAUDIA</h1>
+    <p>Control de Préstamos Compartido</p>
+  </header>
+
+  <div class="resumen-principal">
+    <div class="card-resumen blue">
+      <span>CAPITAL EN LA CALLE</span>
+      <h2 id="total-capital">$0</h2>
+    </div>
+    <div class="card-resumen orange">
+      <span>GANANCIA PROYECTADA</span>
+      <h2 id="total-interes">$0</h2>
+    </div>
+  </div>
+
+  <section class="admin-section">
+    <h3>📝 Generar Nuevo Perfil</h3>
+    <input type="text" id="nombre" placeholder="Nombre y Apellido">
+    <input type="text" id="dni" placeholder="N° Documento">
+    <input type="text" id="domicilio" placeholder="Dirección / Domicilio">
+    <input type="text" id="telefono" placeholder="Teléfono">
+    <input type="number" id="monto" placeholder="Monto Prestado (Capital)">
+    <input type="number" id="interes_porcentaje" placeholder="% Interés (ej: 30)" value="30">
+    <input type="number" id="cuotas" placeholder="Días de plazo (cuotas)">
+    <input type="date" id="fecha_inicio">
+    <button class="btn-main" onclick="crearPrestamo()">+ CREAR PRÉSTAMO</button>
+  </section>
+
+  <section>
+    <h3>👥 Clientes Activos</h3>
+    <div id="lista-clientes"></div>
+  </section>
+</div>
+
+<div id="modal-glosario" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="cerrarModal()">&times;</span>
+    <h2 id="modal-cliente-nombre">Detalle</h2>
+    <div id="info-cliente-detalle" class="info
