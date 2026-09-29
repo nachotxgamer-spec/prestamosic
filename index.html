@@ -1,44 +1,52 @@
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Cobranzas y Préstamos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-<div class="app-container">
-  <header>
-    <h1 id="saludo-dinamico">Hola, IGNACIO o CLAUDIA</h1>
-    <p>Control de Préstamos Compartido</p>
-  </header>
+  <h1>Control de Cobranzas</h1>
 
-  <div class="resumen-principal">
-    <div class="card-resumen blue">
-      <span>CAPITAL EN LA CALLE</span>
-      <h2 id="total-capital">$0</h2>
-    </div>
-    <div class="card-resumen orange">
-      <span>GANANCIA PROYECTADA</span>
-      <h2 id="total-interes">$0</h2>
-    </div>
+  <!-- FORMULARIO NUEVO PRESTAMO -->
+  <div class="card">
+    <h2>Nuevo Perfil / Préstamo</h2>
+    <form id="loanForm">
+      <div class="form-group">
+        <label>Nombre del Cliente</label>
+        <input type="text" id="clientName" placeholder="Ej: Juan Pérez" required>
+      </div>
+      <div class="form-group">
+        <label>Monto Prestado ($)</label>
+        <input type="number" id="amount" placeholder="100000" required>
+      </div>
+      <div class="form-group">
+        <label>Porcentaje Interés (%)</label>
+        <input type="number" id="interest" placeholder="20" required>
+      </div>
+      <div class="form-group">
+        <label>Cantidad de Cuotas</label>
+        <input type="number" id="installments" placeholder="4" required>
+      </div>
+      <div class="form-group">
+        <label>Frecuencia de Pago</label>
+        <select id="frequency">
+          <option value="Semanal">Semanal</option>
+          <option value="Quincenal">Quincenal</option>
+          <option value="Mensual">Mensual</option>
+        </select>
+      </div>
+      <button type="submit">Guardar Préstamo</button>
+    </form>
   </div>
 
-  <section class="admin-section">
-    <h3>📝 Generar Nuevo Perfil</h3>
-    <input type="text" id="nombre" placeholder="Nombre y Apellido">
-    <input type="text" id="dni" placeholder="N° Documento">
-    <input type="text" id="domicilio" placeholder="Dirección / Domicilio">
-    <input type="text" id="telefono" placeholder="Teléfono">
-    <input type="number" id="monto" placeholder="Monto Prestado (Capital)">
-    <input type="number" id="interes_porcentaje" placeholder="% Interés (ej: 30)" value="30">
-    <input type="number" id="cuotas" placeholder="Días de plazo (cuotas)">
-    <input type="date" id="fecha_inicio">
-    <button class="btn-main" onclick="crearPrestamo()">+ CREAR PRÉSTAMO</button>
-  </section>
+  <!-- LISTA DE PERFILES Y COBROS -->
+  <h2>Perfiles Activos</h2>
+  <div id="clientList">Cargando perfiles...</div>
 
-  <section>
-    <h3>👥 Clientes Activos</h3>
-    <div id="lista-clientes"></div>
-  </section>
-</div>
-
-<div id="modal-glosario" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="cerrarModal()">&times;</span>
-    <h2 id="modal-cliente-nombre">Detalle</h2>
-    <div id="info-cliente-detalle" class="info
+  <!-- LÓGICA DE JAVASCRIPT -->
+  <script type="module" src="script.js"></script>
+</body>
+</html>
