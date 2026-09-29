@@ -1,129 +1,106 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Tu configuración de Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyDiXYfi_iH6RHi7Uyz_u_3oz2oQy3VA7E8",
-  authDomain: "mis-prestamos-9ae5d.firebaseapp.com",
-  databaseURL: "https://mis-prestamos-9ae5d-default-rtdb.firebaseio.com",
-  projectId: "mis-prestamos-9ae5d",
-  storageBucket: "mis-prestamos-9ae5d.firebasestorage.app",
-  messagingSenderId: "218821257027",
-  appId: "1:218821257027:web:a0329e628f99c6f52ff1f6"
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROYECTO_ID",
+  storageBucket: "TU_PROYECTO.appspot.com",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID"
 };
 
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-let clienteActivo = "";
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// CREAR PERFIL
-window.crearPrestamo = function() {
-  const nombre = document.getElementById('nombre').value.trim();
-  const capital = parseFloat(document.getElementById('monto').value);
-  const porcentaje = parseFloat(document.getElementById('interes_porcentaje').value);
-  const cuotas = parseInt(document.getElementById('cuotas').value);
-  const fechaIn = document.getElementById('fecha_inicio').value;
+const loanForm = document.getElementById('loanForm');
+const clientList = document.getElementById('clientList');
 
-  if (nombre && capital && cuotas && fechaIn) {
-    const totalADevolver = capital + (capital * (porcentaje / 100));
-    const interesMonto = capital * (porcentaje / 100);
-    const valorCuota = totalADevolver / cuotas;
+// Guardar nuevo préstamo
+loanForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-    db.ref('clientes/' + nombre).set({
-      nombre: nombre,
-      dni: document.getElementById('dni').value,
-      domicilio: document.getElementById('domicilio').value,
-      telefono: document.getElementById('telefono').value,
-      capital: capital,
-      interesMonto: interesMonto,
-      totalADevolver: totalADevolver,
-      cuotaDiaria: valorCuota,
-      pagado: 0,
-      fechaInicio: fechaIn
-    }).then(() => {
-      alert("¡Perfil de " + nombre + " guardado!");
-      location.reload();
+  const name = document.getElementById('clientName').value;
+  const amount = parseFloat(document.getElementById('amount').value);
+  const interest = parseFloat(document.getElementById('interest').value);
+  const installments = parseInt(document.getElementById('installments').value);
+  const frequency = document.getElementById('frequency').value;
+
+  const totalToPay = amount + (amount * (interest / 100));
+  const installmentValue = totalToPay / installments;
+
+  try {
+    await addDoc(collection(db, "loans"), {
+      name,
+      amount,
+      interest,
+      installments,
+      installmentValue,
+      totalToPay,
+      paidInstallments: 0,
+      remainingAmount: totalToPay,
+      frequency,
+      createdAt: new Date().toISOString()
     });
-  } else {
-    alert("Por favor completa todos los campos requeridos.");
+
+    loanForm.reset();
+    loadClients();
+  } catch (error) {
+    console.error("Error al guardar en Firebase: ", error);
   }
-};
-
-// ACTUALIZACIÓN DE TABLERO Y LISTA
-db.ref('clientes').on('value', (snapshot) => {
-  const lista = document.getElementById('lista-clientes');
-  let capTotal = 0;
-  let intTotal = 0;
-  lista.innerHTML = "";
-
-  snapshot.forEach((child) => {
-    const c = child.val();
-    capTotal += c.capital;
-    intTotal += (c.interesMonto || 0);
-
-    const item = document.createElement('div');
-    item.className = 'cliente-item';
-    item.onclick = () => abrirGlosario(c);
-    item.innerHTML = `
-      <div>
-        <strong>${c.nombre}</strong><br>
-        <small style="color:#94a3b8">DNI: ${c.dni}</small>
-      </div>
-      <div style="text-align:right">
-        <span style="color:#10b981">$${(c.totalADevolver - c.pagado).toFixed(0)}</span><br>
-        <small style="font-size:10px">RESTA</small>
-      </div>
-    `;
-    lista.appendChild(item);
-  });
-
-  document.getElementById('total-capital').innerText = "$" + capTotal.toLocaleString();
-  document.getElementById('total-interes').innerText = "$" + intTotal.toLocaleString();
 });
 
-// MODAL / GLOSARIO
-window.abrirGlosario = function(c) {
-  clienteActivo = c.nombre;
-  document.getElementById('modal-cliente-nombre').innerText = c.nombre;
-  document.getElementById('info-cliente-detalle').innerHTML = `
-    🪪 DNI: ${c.dni}<br>
-    🏠 Domicilio: ${c.domicilio}<br>
-    📞 Teléfono: ${c.telefono}<br>
-    🗓️ Fecha Inicio: ${c.fechaInicio}<br>
-    💰 Capital Inicial: $${c.capital.toLocaleString()}
-  `;
-  document.getElementById('cuota-hoy').innerText = "$" + c.cuotaDiaria.toFixed(2);
-  document.getElementById('modal-glosario').style.display = "block";
-  
-  db.ref('historial/' + c.nombre).off(); // Limpiar escucha previa
-  db.ref('historial/' + c.nombre).on('value', (snap) => {
-    const h = document.getElementById('historial-pagos');
-    h.innerHTML = "";
-    snap.forEach(p => {
-      h.innerHTML += `<li>📅 ${p.val().fecha} — Cobraste: <b>$${p.val().monto}</b></li>`;
-    });
-  });
-};
+// Cargar perfiles
+async function loadClients() {
+  clientList.innerHTML = '<p style="text-align:center; color:#94a3b8;">Cargando perfiles...</p>';
+  const querySnapshot = await getDocs(collection(db, "loans"));
 
-// REGISTRAR COBRO
-window.registrarPago = function() {
-  const monto = parseFloat(document.getElementById('monto-pago').value);
-  if (!monto) return;
-  const ref = db.ref('clientes/' + clienteActivo);
-  ref.once('value').then(s => {
-    const nuevoPagado = (s.val().pagado || 0) + monto;
-    ref.update({ pagado: nuevoPagado });
-    db.ref('historial/' + clienteActivo).push({
-      monto: monto,
-      fecha: new Date().toLocaleDateString()
-    });
-    document.getElementById('monto-pago').value = "";
-    alert("Cobro registrado con éxito");
-  });
-};
+  clientList.innerHTML = '';
 
-window.eliminarPerfil = function() {
-  if (confirm("¿Seguro que quieres borrar a " + clienteActivo + "?")) {
-    db.ref('clientes/' + clienteActivo).remove();
-    db.ref('historial/' + clienteActivo).remove();
-    cerrarModal();
+  if (querySnapshot.empty) {
+    clientList.innerHTML = '<p style="text-align:center; color:#94a3b8;">No hay perfiles registrados.</p>';
+    return;
   }
+
+  querySnapshot.forEach((document) => {
+    const data = document.data();
+    const id = document.id;
+
+    const card = document.createElement('div');
+    card.className = 'client-card';
+    card.innerHTML = `
+      <div class="client-header">
+        <span class="client-name">${data.name}</span>
+        <span class="client-amount">$${data.remainingAmount.toLocaleString('es-AR')} pend.</span>
+      </div>
+      <div class="client-stats">
+        <strong>Monto original:</strong> $${data.amount.toLocaleString('es-AR')} (+${data.interest}% interés)<br>
+        <strong>Cuota (${data.frequency}):</strong> $${Math.round(data.installmentValue).toLocaleString('es-AR')}<br>
+        <strong>Progreso:</strong> ${data.paidInstallments} de ${data.installments} cuotas pagadas
+      </div>
+      ${data.paidInstallments < data.installments 
+        ? `<button class="btn-pay" onclick="payInstallment('${id}', ${data.paidInstallments},${data.installments}, ${data.installmentValue},${data.remainingAmount})">Registrar Pago de Cuota</button>` 
+        : '<div class="completed-badge">¡Préstamo Finalizado!</div>'}
+    `;
+    clientList.appendChild(card);
+  });
+}
+
+// Registrar pago
+window.payInstallment = async (id, currentPaid, totalInstallments, installmentValue, currentRemaining) => {
+  const newPaid = currentPaid + 1;
+  const newRemaining = Math.max(0, currentRemaining - installmentValue);
+
+  const loanRef = doc(db, "loans", id);
+  await updateDoc(loanRef, {
+    paidInstallments: newPaid,
+    remainingAmount: newRemaining
+  });
+
+  loadClients();
 };
 
-window.cerrarModal = () => { document.getElementById('modal-glosario').style.display = "none"; };
+// Carga inicial al abrir la página
+loadClients();
